@@ -1,7 +1,9 @@
 # Directories
 .vs/
+.cache
 bin/
 bin-int/
+build
 
 # Files
 *.vcxproj
@@ -11,3 +13,6 @@ bin-int/
 
 # Exclude
 !vendor/bin
+
+# Cmake
+compile_commands.json
