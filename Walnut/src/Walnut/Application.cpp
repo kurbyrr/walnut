@@ -43,6 +43,14 @@ static ImGui_ImplVulkanH_Window g_MainWindowData;
 static int                      g_MinImageCount = 2;
 static bool                     g_SwapChainRebuild = false;
 
+// Per-frame-in-flight
+static std::vector<std::vector<VkCommandBuffer>> s_AllocatedCommandBuffers;
+static std::vector<std::vector<std::function<void()>>> s_ResourceFreeQueue;
+
+// Unlike g_MainWindowData.FrameIndex, this is not the the swapchain image index
+// and is always guaranteed to increase (eg. 0, 1, 2, 0, 1, 2)
+static uint32_t s_CurrentFrameIndex = 0;
+
 void check_vk_result(VkResult err)
 {
 	if (err == 0)
@@ -270,6 +278,8 @@ static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
 	}
 	check_vk_result(err);
 
+	s_CurrentFrameIndex = (s_CurrentFrameIndex + 1) % g_MainWindowData.ImageCount;
+
 	ImGui_ImplVulkanH_Frame* fd = &wd->Frames[wd->FrameIndex];
 	{
 		err = vkWaitForFences(g_Device, 1, &fd->Fence, VK_TRUE, UINT64_MAX);    // wait indefinitely instead of periodically checking
@@ -278,7 +288,23 @@ static void FrameRender(ImGui_ImplVulkanH_Window* wd, ImDrawData* draw_data)
 		err = vkResetFences(g_Device, 1, &fd->Fence);
 		check_vk_result(err);
 	}
+	
 	{
+		// Free resources in queue
+		for (auto& func : s_ResourceFreeQueue[s_CurrentFrameIndex])
+			func();
+		s_ResourceFreeQueue[s_CurrentFrameIndex].clear();
+	}
+	{
+		// Free command buffers allocated by Application::GetCommandBuffer
+		// These use g_MainWindowData.FrameIndex and not s_CurrentFrameIndex because they're tied to the swapchain image index
+		auto& allocatedCommandBuffers = s_AllocatedCommandBuffers[wd->FrameIndex];
+		if (allocatedCommandBuffers.size() > 0)
+		{
+			vkFreeCommandBuffers(g_Device, fd->CommandPool, (uint32_t)allocatedCommandBuffers.size(), allocatedCommandBuffers.data());
+			allocatedCommandBuffers.clear();
+		}
+
 		err = vkResetCommandPool(g_Device, fd->CommandPool, 0);
 		check_vk_result(err);
 		VkCommandBufferBeginInfo info = {};
@@ -397,6 +423,9 @@ namespace Walnut {
 		ImGui_ImplVulkanH_Window* wd = &g_MainWindowData;
 		SetupVulkanWindow(wd, surface, w, h);
 
+		s_AllocatedCommandBuffers.resize(wd->ImageCount);
+		s_ResourceFreeQueue.resize(wd->ImageCount);
+
 		// Setup Dear ImGui context
 		IMGUI_CHECKVERSION();
 		ImGui::CreateContext();
@@ -479,6 +508,15 @@ namespace Walnut {
 		// Cleanup
 		VkResult err = vkDeviceWaitIdle(g_Device);
 		check_vk_result(err);
+
+		// Free resources in queue
+		for (auto& queue : s_ResourceFreeQueue)
+		{
+			for (auto& func : queue)
+				func();
+		}
+		s_ResourceFreeQueue.clear();
+
 		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
@@ -520,6 +558,11 @@ namespace Walnut {
 					ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
 					ImGui_ImplVulkanH_CreateOrResizeWindow(g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData, g_QueueFamily, g_Allocator, width, height, g_MinImageCount);
 					g_MainWindowData.FrameIndex = 0;
+
+					// Clear allocated command buffers from here since entire pool is destroyed
+					s_AllocatedCommandBuffers.clear();
+					s_AllocatedCommandBuffers.resize(g_MainWindowData.ImageCount);
+
 					g_SwapChainRebuild = false;
 				}
 			}
@@ -644,7 +687,7 @@ namespace Walnut {
 		cmdBufAllocateInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 		cmdBufAllocateInfo.commandBufferCount = 1;
 
-		VkCommandBuffer command_buffer;
+		VkCommandBuffer& command_buffer = s_AllocatedCommandBuffers[wd->FrameIndex].emplace_back();
 		auto err = vkAllocateCommandBuffers(g_Device, &cmdBufAllocateInfo, &command_buffer);
 
 		VkCommandBufferBeginInfo begin_info = {};
@@ -685,5 +728,9 @@ namespace Walnut {
 	}
 
 
+	void Application::SubmitResourceFree(std::function<void()>&& func)
+	{
+		s_ResourceFreeQueue[s_CurrentFrameIndex].emplace_back(func);
+	}
 
 }

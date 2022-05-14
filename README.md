@@ -19,7 +19,7 @@ _<center>Forest Launcher - an application made with Walnut</center>_
 ```bash
 mkdir build && cd build
 cmake ..
-make -jN # replace N with amount of cores u want to build with
+cmake --build . -jN # replace N with amount of cores u want to build with
 ```
 
 ### 3rd party libaries
