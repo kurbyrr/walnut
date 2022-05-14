@@ -1,4 +1,3 @@
-#pragma once
 #include "Application.h"
 
 bool g_ApplicationRunning = true;
