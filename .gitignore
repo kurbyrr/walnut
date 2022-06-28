@@ -1,6 +1,7 @@
 # Directories
 .vs/
 .cache
+.vscode/
 bin/
 bin-int/
 build
