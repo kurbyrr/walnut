@@ -4,51 +4,60 @@
 
 #include "vulkan/vulkan.h"
 
-namespace Walnut {
+namespace Walnut
+{
 
-	enum class ImageFormat
-	{
-		None = 0,
-		RGBA,
-		RGBA32F
-	};
+enum class ImageFormat
+{
+    None = 0,
+    RGBA,
+    RGBA32F
+};
 
-	class Image
-	{
-	public:
-		Image(std::string_view path);
-		Image(uint32_t width, uint32_t height, ImageFormat format, const void* data = nullptr);
-		~Image();
+class Image
+{
+  public:
+    Image(std::string_view path);
+    Image(uint32_t width, uint32_t height, ImageFormat format, const void *data = nullptr);
+    ~Image();
 
-		void SetData(const void* data);
+    void SetData(const void *data);
 
-		VkDescriptorSet GetDescriptorSet() const { return m_DescriptorSet; }
+    VkDescriptorSet GetDescriptorSet() const
+    {
+        return m_DescriptorSet;
+    }
 
-		uint32_t GetWidth() const { return m_Width; }
-		uint32_t GetHeight() const { return m_Height; }
-	private:
-		void AllocateMemory(uint64_t size);
-	private:
-		uint32_t m_Width = 0, m_Height = 0;
+    uint32_t GetWidth() const
+    {
+        return m_Width;
+    }
+    uint32_t GetHeight() const
+    {
+        return m_Height;
+    }
 
-		VkImage m_Image = nullptr;
-		VkImageView m_ImageView = nullptr;
-		VkDeviceMemory m_Memory = nullptr;
-		VkSampler m_Sampler = nullptr;
+  private:
+    void AllocateMemory(uint64_t size);
 
-		ImageFormat m_Format = ImageFormat::None;
+  private:
+    uint32_t m_Width = 0, m_Height = 0;
 
-		VkBuffer m_StagingBuffer = nullptr;
-		VkDeviceMemory m_StagingBufferMemory = nullptr;
+    VkImage m_Image = nullptr;
+    VkImageView m_ImageView = nullptr;
+    VkDeviceMemory m_Memory = nullptr;
+    VkSampler m_Sampler = nullptr;
 
-		size_t m_AlignedSize = 0;
+    ImageFormat m_Format = ImageFormat::None;
 
-		VkDescriptorSet m_DescriptorSet = nullptr;
+    VkBuffer m_StagingBuffer = nullptr;
+    VkDeviceMemory m_StagingBufferMemory = nullptr;
 
-		std::string m_Filepath;
-	};
+    size_t m_AlignedSize = 0;
 
-}
+    VkDescriptorSet m_DescriptorSet = nullptr;
 
+    std::string m_Filepath;
+};
 
-
+} // namespace Walnut
