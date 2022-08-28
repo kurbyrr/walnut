@@ -11,6 +11,7 @@
 #define GLFW_INCLUDE_NONE
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
 #include <vulkan/vulkan.h>
 
 #include <iostream>
@@ -51,6 +52,8 @@ static std::vector<std::vector<std::function<void()>>> s_ResourceFreeQueue;
 // Unlike g_MainWindowData.FrameIndex, this is not the the swapchain image index
 // and is always guaranteed to increase (eg. 0, 1, 2, 0, 1, 2)
 static uint32_t s_CurrentFrameIndex = 0;
+
+static Walnut::Application *s_Instance = nullptr;
 
 void check_vk_result(VkResult err)
 {
@@ -400,12 +403,21 @@ namespace Walnut
 
 Application::Application(const ApplicationSpecification &specification) : m_Specification(specification)
 {
+    s_Instance = this;
+
     Init();
 }
 
 Application::~Application()
 {
     Shutdown();
+
+    s_Instance = nullptr;
+}
+
+Application &Application::Get()
+{
+    return *s_Instance;
 }
 
 void Application::Init()
@@ -572,6 +584,9 @@ void Application::Run()
         // two flags.
         glfwPollEvents();
 
+        for (auto &layer : m_LayerStack)
+            layer->OnUpdate(m_TimeStep);
+
         // Resize swap chain?
         if (g_SwapChainRebuild)
         {
@@ -676,12 +691,22 @@ void Application::Run()
         // Present Main Platform Window
         if (!main_is_minimized)
             FramePresent(wd);
+
+        float time = GetTime();
+        m_FrameTime = time - m_LastFrameTime;
+        m_TimeStep = glm::min<float>(m_FrameTime, 0.0333f);
+        m_LastFrameTime = time;
     }
 }
 
 void Application::Close()
 {
     m_Running = false;
+}
+
+float Application::GetTime()
+{
+    return (float)glfwGetTime();
 }
 
 VkInstance Application::GetInstance()
