@@ -56,6 +56,8 @@ class ExampleLayer : public Walnut::Layer
         if (ImGui::Button("Update All"))
             metarManager.updateMetars();
 
+        ImGui::Separator();
+
         ImGui::End();
 
         ImGui::ShowDemoWindow();
