@@ -3,6 +3,8 @@
 
 #include "MetarManager.h"
 
+#include <fstream>
+
 template <typename R> bool is_ready(std::shared_future<R> const &f)
 {
     return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
@@ -11,6 +13,29 @@ template <typename R> bool is_ready(std::shared_future<R> const &f)
 class ExampleLayer : public Walnut::Layer
 {
   public:
+    // Save and load state from disk
+    virtual void OnAttach() override
+    {
+        std::ifstream iFile("./AtisConf.txt");
+        quicktype::ConfigData configData = nlohmann::json::parse(iFile);
+        metarManager.addAirports(configData.airports);
+    }
+
+    virtual void OnDetach() override
+    {
+        std::ofstream oFile("./AtisConf.txt");
+        quicktype::ConfigData configData;
+        configData.airports.reserve(metarManager.metars.size());
+
+        for (auto it = metarManager.metars.begin(); it != metarManager.metars.end(); it++)
+        {
+            configData.airports.push_back(it->first);
+        }
+
+        nlohmann::json json = configData;
+        oFile << json;
+    }
+
     virtual void OnUIRender() override
     {
         ImGui::Begin("AtisQuitaine");

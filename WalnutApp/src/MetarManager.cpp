@@ -2,6 +2,15 @@
 
 httplib::Client MetarManager::httpClient(FBW_BASE_URL);
 
+void MetarManager::addAirports(const std::vector<std::string> &airports)
+{
+    int i = 0;
+    for (const auto &airport : airports)
+    {
+        metars[airport] = std::async(std::launch::async, MetarManager::fetchMetar, airport, i);
+    }
+}
+
 void MetarManager::removeAirport(const std::string &airport)
 {
     metars.erase(airport);

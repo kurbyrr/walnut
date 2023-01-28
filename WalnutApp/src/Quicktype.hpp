@@ -59,3 +59,30 @@ inline void to_json(json &j, const ApiRes &x)
     j["source"] = x.source;
 }
 } // namespace quicktype
+
+namespace quicktype
+{
+using nlohmann::json;
+
+struct ConfigData
+{
+    std::vector<std::string> airports;
+};
+} // namespace quicktype
+
+namespace quicktype
+{
+void from_json(const json &j, ConfigData &x);
+void to_json(json &j, const ConfigData &x);
+
+inline void from_json(const json &j, ConfigData &x)
+{
+    x.airports = j.at("airports").get<std::vector<std::string>>();
+}
+
+inline void to_json(json &j, const ConfigData &x)
+{
+    j = json::object();
+    j["airports"] = x.airports;
+}
+} // namespace quicktype
