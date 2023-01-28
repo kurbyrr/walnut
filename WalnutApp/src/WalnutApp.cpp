@@ -14,17 +14,23 @@ class ExampleLayer : public Walnut::Layer
     virtual void OnUIRender() override
     {
         ImGui::Begin("AtisQuitaine");
+
         for (auto it = metarManager.metars.begin(); it != metarManager.metars.end(); it++)
         {
             ImGui::Text("%s", it->first.c_str());
             ImGui::Text("METAR: %s", is_ready(it->second) ? it->second.get().c_str() : "Updating");
         }
-        ImGui::InputText("Add Airport", newAiportBuf.data(), newAiportBuf.size());
-        if (ImGui::Button("+"))
+
+        ImGui::InputText("Add Airport", newAiportBuf.data(), newAiportBuf.size(), ImGuiInputTextFlags_CharsUppercase);
+        if (ImGui::SameLine(), ImGui::Button("+"))
         {
             metarManager.updateMetar(newAiportBuf.data());
             newAiportBuf.fill(0);
         }
+
+        if (ImGui::Button("Update All"))
+            metarManager.updateMetars();
+
         ImGui::End();
 
         ImGui::ShowDemoWindow();

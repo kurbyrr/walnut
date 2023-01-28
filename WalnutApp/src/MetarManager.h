@@ -19,6 +19,6 @@ class MetarManager
     std::map<std::string, std::shared_future<std::string>> metars;
 
   private:
-    static std::string fetchMetar(const std::string &airport);
+    static std::string fetchMetar(const std::string &airport, int timeout = 0);
     static httplib::Client httpClient;
 };
