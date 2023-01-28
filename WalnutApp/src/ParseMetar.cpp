@@ -62,12 +62,30 @@ void LFBDWindLogic(const glm::vec2 &wind)
         }
         else if (inRange(-15.0f, 15.0f, rotatedVector.y))
         {
+            // RWY
         }
     }
 }
 
 void LFBHBEWindLogic(const glm::vec2 &wind)
 {
+    glm::vec2 NEProjection = {wind.y * std::cos(glm::radians(wind.x)), wind.y * std::sin(glm::radians(wind.x))};
+
+    if (wind.y < 5.0f)
+    {
+        return; // RWY27
+    }
+    else
+    {
+        if (NEProjection.x > 0.0f)
+        {
+            return; // RWY27
+        }
+        else
+        {
+            return; // RWY09
+        }
+    }
 }
 
 void parseMetarArray(const std::vector<std::string> &metarArray)
