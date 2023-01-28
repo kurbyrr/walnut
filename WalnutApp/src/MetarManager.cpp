@@ -9,7 +9,7 @@ void MetarManager::removeAirport(const std::string &airport)
 
 void MetarManager::updateMetar(const std::string &airport)
 {
-    metars[airport] = std::move(std::async(std::launch::async, MetarManager::fetchMetar, airport));
+    metars[airport] = std::async(std::launch::async, MetarManager::fetchMetar, airport);
 }
 
 void MetarManager::updateMetars()

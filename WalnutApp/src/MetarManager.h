@@ -16,7 +16,7 @@ class MetarManager
     void updateMetars();
     void updateMetar(const std::string &airport);
     void removeAirport(const std::string &airport);
-    std::map<std::string, std::future<std::string>> metars;
+    std::map<std::string, std::shared_future<std::string>> metars;
 
   private:
     static std::string fetchMetar(const std::string &airport);
