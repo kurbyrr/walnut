@@ -13,62 +13,42 @@ template <typename R> bool is_ready(std::shared_future<R> const &f)
 class ExampleLayer : public Walnut::Layer
 {
   public:
-    // Save and load state from disk
     virtual void OnAttach() override
     {
-        if (!std::filesystem::exists("./AtisConf.txt"))
-            return;
+        if (!std::filesystem::exists("./airac.json"))
+            throw std::runtime_error("No airac data found");
 
-        std::ifstream iFile("./AtisConf.txt");
-        quicktype::ConfigData configData = nlohmann::json::parse(iFile);
-        metarManager.addAirports(configData.airports);
-    }
+        std::ifstream airacFile("./airac.json");
+        airacData = nlohmann::json::parse(airacFile);
 
-    virtual void OnDetach() override
-    {
-        std::ofstream oFile("./AtisConf.txt");
-        quicktype::ConfigData configData;
-        configData.airports.reserve(metarManager.metars.size());
-
-        for (auto it = metarManager.metars.begin(); it != metarManager.metars.end(); it++)
-        {
-            configData.airports.push_back(it->first);
-        }
-
-        nlohmann::json json = configData;
-        oFile << json;
+        metarManager.addAirports(airacData);
     }
 
     virtual void OnUIRender() override
     {
-        ImGui::Begin("AtisQuitaine");
-
-        for (auto it = metarManager.metars.begin(); it != metarManager.metars.end(); it++)
+        for (auto &airport : airacData)
         {
-            ImGui::Text("%s", it->first.c_str());
-            ImGui::Text("METAR: %s", is_ready(it->second) ? it->second.get().c_str() : "Updating");
+            const std::shared_future<std::string> &future = metarManager.metars.at(airport.icao);
+
+            ImGui::Begin(airport.icao.c_str());
+            ImGui::Text("METAR: %s\nRunway in use:", is_ready(future) ? future.get().c_str() : "Updating...");
+            for (auto &runway : airport.runways)
+            {
+                if (ImGui::RadioButton(runway.name.c_str(), runwaysInUse[airport.icao] == runway.qfu))
+                    runwaysInUse[airport.icao] = runway.qfu;
+            }
+            ImGui::End();
         }
 
-        ImGui::InputText("Add Airport", newAiportBuf.data(), newAiportBuf.size(), ImGuiInputTextFlags_CharsUppercase);
-        if (ImGui::SameLine(), ImGui::Button("+"))
-        {
-            metarManager.updateMetar(newAiportBuf.data());
-            newAiportBuf.fill(0);
-        }
-
-        if (ImGui::Button("Update All"))
-            metarManager.updateMetars();
-
-        ImGui::Separator();
-
-        ImGui::End();
+        // ImGui::Separator();
 
         ImGui::ShowDemoWindow();
     }
 
   private:
     MetarManager metarManager;
-    std::array<char, 5> newAiportBuf;
+    quicktype::Airac airacData;
+    std::unordered_map<std::string, int> runwaysInUse;
 };
 
 Walnut::Application *Walnut::CreateApplication(int argc, char **argv)
@@ -78,15 +58,15 @@ Walnut::Application *Walnut::CreateApplication(int argc, char **argv)
 
     Walnut::Application *app = new Walnut::Application(spec);
     app->PushLayer<ExampleLayer>();
-    app->SetMenubarCallback([app]() {
-        if (ImGui::BeginMenu("File"))
-        {
-            if (ImGui::MenuItem("Exit"))
-            {
-                app->Close();
-            }
-            ImGui::EndMenu();
-        }
-    });
+    // app->SetMenubarCallback([app]() {
+    //     if (ImGui::BeginMenu("File"))
+    //     {
+    //         if (ImGui::MenuItem("Exit"))
+    //         {
+    //             app->Close();
+    //         }
+    //         ImGui::EndMenu();
+    //     }
+    // });
     return app;
 }

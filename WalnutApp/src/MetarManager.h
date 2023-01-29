@@ -15,7 +15,7 @@ class MetarManager
   public:
     void updateMetar(const std::string &airport);
     void updateMetars();
-    void addAirports(const std::vector<std::string> &airports);
+    void addAirports(const quicktype::Airac &airac);
     void removeAirport(const std::string &airport);
     std::map<std::string, std::shared_future<std::string>> metars;
 

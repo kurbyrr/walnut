@@ -2,12 +2,11 @@
 
 httplib::Client MetarManager::httpClient(FBW_BASE_URL);
 
-void MetarManager::addAirports(const std::vector<std::string> &airports)
+void MetarManager::addAirports(const quicktype::Airac &airac)
 {
-    int i = 0;
-    for (const auto &airport : airports)
+    for (int i = 0; i < airac.size(); i++)
     {
-        metars[airport] = std::async(std::launch::async, MetarManager::fetchMetar, airport, i);
+        metars[airac[i].icao] = std::async(std::launch::async, MetarManager::fetchMetar, airac[i].icao, i);
     }
 }
 
