@@ -56,11 +56,21 @@ std::string MetarManager::fetchMetar(const std::string &airport, int timeout)
 {
     std::this_thread::sleep_for(std::chrono::seconds(timeout));
     httplib::Headers headers = {{"accept", "application/json"}};
-    httplib::Result res = httpClient.Get("/metar/" + airport, headers);
-    if (res->status != 200)
-        return {};
+    int retries = 5;
+    while (retries)
+    {
+        httplib::Result res = httpClient.Get("/metar/" + airport, headers);
+        if (!res || res->status != 200) // Short circuiting
+        {
+            retries--;
+            std::this_thread::sleep_for(std::chrono::seconds(5));
+            continue;
+        }
 
-    quicktype::ApiRes json = nlohmann::json::parse(res->body);
+        quicktype::ApiRes json = nlohmann::json::parse(res->body);
 
-    return json.metar;
+        return json.metar;
+    }
+
+    return "An error has occured!";
 }
