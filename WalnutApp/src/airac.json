@@ -1,0 +1,112 @@
+{
+    "LFBD": {
+        "SIDWPT": [
+            "CNA",
+            "SAU",
+            "ROYAN",
+            "VAVIX"
+        ],
+        "STARWPT": [
+            "VAVIX",
+            "MIRBA",
+            "VELIN",
+            "LMG",
+            "CNA",
+            "ROYAN"
+        ],
+        "Runways": [
+            {
+                "Name": "23",
+                "QFU": 225,
+                "SIDRNAV": "5P",
+                "SIDCONV": "5A",
+                "STARRNAV": "1L",
+                "STARCONV": "1K"
+            },
+            {
+                "Name": "05",
+                "QFU": 45,
+                "SIDRNAV": "5Q",
+                "SIDCONV": "5B/5Z",
+                "STARRNAV": "1L",
+                "STARCONV": "1K"
+            },
+            {
+                "Name": "29",
+                "QFU": 286,
+                "SIDRNAV": "5R",
+                "SIDCONV": "5W",
+                "STARRNAV": "1L",
+                "STARCONV": "1K"
+            },
+            {
+                "Name": "11",
+                "QFU": 106,
+                "SIDRNAV": null,
+                "SIDCONV": "5B/5Z",
+                "STARRNAV": "1L",
+                "STARCONV": "1K"
+            }
+        ]
+    },
+    "LFBE": {
+        "SIDWPT": [
+            "SECHE",
+            "VELIN",
+            "BUGUS"
+        ],
+        "STARWPT": [
+            "VELIN",
+            "BUGUS",
+            "RUMEL",
+            "BE090"
+        ],
+        "Runways": [
+            {
+                "Name": "27",
+                "QFU": 274,
+                "SIDRNAV": "7W",
+                "SIDCONV": null,
+                "STARRNAV": "7T",
+                "STARCONV": null
+            },
+            {
+                "Name": "09",
+                "QFU": 94,
+                "SIDRNAV": "7E",
+                "SIDCONV": null,
+                "STARRNAV": "7P",
+                "STARCONV": null
+            }
+        ]
+    },
+    "LFBH": {
+        "SIDWPT": [
+            "LUSON",
+            "OLERO"
+        ],
+        "STARWPT": [
+            "LUSON",
+            "LUGEN",
+            "MAREN"
+        ],
+        "Runways": [
+            {
+                "Name": "27",
+                "QFU": 272,
+                "SIDRNAV": null,
+                "SIDCONV": "5W",
+                "STARRNAV": "6M",
+                "STARCONV": "6D/6L"
+            },
+            {
+                "Name": "09",
+                "QFU": 92,
+                "SIDRNAV": null,
+                "SIDCONV": "5E",
+                "STARRNAV": "6C",
+                "STARCONV": null
+            }
+        ]
+    }
+}
