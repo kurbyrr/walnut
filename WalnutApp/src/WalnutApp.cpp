@@ -16,6 +16,9 @@ class ExampleLayer : public Walnut::Layer
     // Save and load state from disk
     virtual void OnAttach() override
     {
+        if (!std::filesystem::exists("./AtisConf.txt"))
+            return;
+
         std::ifstream iFile("./AtisConf.txt");
         quicktype::ConfigData configData = nlohmann::json::parse(iFile);
         metarManager.addAirports(configData.airports);
