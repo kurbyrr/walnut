@@ -8,6 +8,7 @@ add_subdirectory(cpp-httplib)
 add_executable(walnutapp
 	src/WalnutApp.cpp
 	src/MetarManager.cpp
+	src/ParseMetar.cpp
 )
 
 target_link_libraries(walnutapp walnut httplib)

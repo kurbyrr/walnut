@@ -7,5 +7,8 @@
 
 #include <glm/glm.hpp>
 
+#include "Quicktype.hpp"
+
 std::vector<std::string> splitString(const std::string &str, char sep);
-void parseMetarArray(const std::vector<std::string> &metarArray, std::unordered_map<std::string, int> &runwaysInUse);
+void parseMetar(const quicktype::Airport &airport, const std::string &metar,
+                std::unordered_map<std::string, int> &runwaysInUse);

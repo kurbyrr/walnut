@@ -17,7 +17,10 @@ class MetarManager
     void updateMetars();
     void addAirports(const quicktype::Airac &airac);
     void removeAirport(const std::string &airport);
-    std::map<std::string, std::shared_future<std::string>> metars;
+    void procFutures();
+
+    std::map<std::string, std::future<std::string>> metarsFutures;
+    std::unordered_map<std::string, std::pair<bool, std::string>> readyMetars;
 
   private:
     static std::string fetchMetar(const std::string &airport, int timeout = 0);

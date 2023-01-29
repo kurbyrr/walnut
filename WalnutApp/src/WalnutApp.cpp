@@ -5,10 +5,7 @@
 
 #include <fstream>
 
-template <typename R> bool is_ready(std::shared_future<R> const &f)
-{
-    return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
-}
+#include "ParseMetar.h"
 
 class ExampleLayer : public Walnut::Layer
 {
@@ -26,12 +23,19 @@ class ExampleLayer : public Walnut::Layer
 
     virtual void OnUIRender() override
     {
+        metarManager.procFutures();
+
         for (auto &airport : airacData)
         {
-            const std::shared_future<std::string> &future = metarManager.metars.at(airport.icao);
-
             ImGui::Begin(airport.icao.c_str());
-            ImGui::Text("METAR: %s\nRunway in use:", is_ready(future) ? future.get().c_str() : "Updating...");
+            if (!metarManager.readyMetars[airport.icao].first)
+            {
+                ImGui::Text("Updating...");
+                ImGui::End();
+                continue;
+            }
+            ImGui::Text("METAR: %s\nRunway in use:", metarManager.readyMetars[airport.icao].second.c_str());
+            parseMetar(airport, metarManager.readyMetars[airport.icao].second, runwaysInUse);
             for (auto &runway : airport.runways)
             {
                 if (ImGui::RadioButton(runway.name.c_str(), runwaysInUse[airport.icao] == runway.qfu))

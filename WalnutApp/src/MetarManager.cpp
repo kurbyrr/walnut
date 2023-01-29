@@ -2,30 +2,53 @@
 
 httplib::Client MetarManager::httpClient(FBW_BASE_URL);
 
+template <typename R> bool is_ready(std::future<R> const &f)
+{
+    return f.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+}
+
+void MetarManager::procFutures()
+{
+    for (auto it = metarsFutures.begin(); it != metarsFutures.end(); it++)
+    {
+        if (!it->second.valid())
+            continue;
+        if (is_ready(it->second))
+        {
+            readyMetars[it->first].first = true;
+            readyMetars[it->first].second = it->second.get();
+        }
+        else
+        {
+            readyMetars[it->first].first = false;
+        }
+    }
+}
+
 void MetarManager::addAirports(const quicktype::Airac &airac)
 {
     for (int i = 0; i < airac.size(); i++)
     {
-        metars[airac[i].icao] = std::async(std::launch::async, MetarManager::fetchMetar, airac[i].icao, i);
+        metarsFutures[airac[i].icao] = std::async(std::launch::async, MetarManager::fetchMetar, airac[i].icao, i);
     }
 }
 
 void MetarManager::removeAirport(const std::string &airport)
 {
-    metars.erase(airport);
+    metarsFutures.erase(airport);
 }
 
 void MetarManager::updateMetar(const std::string &airport)
 {
-    metars[airport] = std::async(std::launch::async, MetarManager::fetchMetar, airport, 0);
+    metarsFutures[airport] = std::async(std::launch::async, MetarManager::fetchMetar, airport, 0);
 }
 
 void MetarManager::updateMetars()
 {
     int i = 0;
-    for (auto it = metars.begin(); it != metars.end(); it++, i++)
+    for (auto it = metarsFutures.begin(); it != metarsFutures.end(); it++, i++)
     {
-        metars[it->first] = std::async(std::launch::async, MetarManager::fetchMetar, it->first, i);
+        metarsFutures[it->first] = std::async(std::launch::async, MetarManager::fetchMetar, it->first, i);
     }
 }
 
