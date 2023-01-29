@@ -1,5 +1,6 @@
-{
-    "LFBD": {
+[
+    {
+        "ICAO": "LFBD",
         "SIDWPT": [
             "CNA",
             "SAU",
@@ -49,7 +50,8 @@
             }
         ]
     },
-    "LFBE": {
+    {
+        "ICAO": "LFBE",
         "SIDWPT": [
             "SECHE",
             "VELIN",
@@ -80,7 +82,8 @@
             }
         ]
     },
-    "LFBH": {
+    {
+        "ICAO": "LFBH",
         "SIDWPT": [
             "LUSON",
             "OLERO"
@@ -109,4 +112,4 @@
             }
         ]
     }
-}
+]
