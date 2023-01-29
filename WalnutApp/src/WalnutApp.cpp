@@ -18,6 +18,16 @@ class ExampleLayer : public Walnut::Layer
         std::ifstream airacFile("./airac.json");
         airacData = nlohmann::json::parse(airacFile);
 
+        // Prepare names for combos
+        for (auto &airport : airacData)
+        {
+            airport.runwayNames.reserve(airport.runways.size());
+            for (auto &runway : airport.runways)
+            {
+                airport.runwayNames.emplace_back(runway.name.c_str());
+            }
+        }
+
         metarManager.addAirports(airacData);
     }
 
@@ -35,12 +45,9 @@ class ExampleLayer : public Walnut::Layer
                 continue;
             }
             ImGui::Text("METAR: %s\nRunway in use:", metarManager.readyMetars[airport.icao].second.c_str());
-            parseMetar(airport, metarManager.readyMetars[airport.icao].second, runwaysInUse);
-            for (auto &runway : airport.runways)
-            {
-                if (ImGui::RadioButton(runway.name.c_str(), runwaysInUse[airport.icao] == runway.qfu))
-                    runwaysInUse[airport.icao] = runway.qfu;
-            }
+            parseMetar(airport, metarManager.readyMetars[airport.icao].second);
+            ImGui::Combo("Runway in use", &airport.selectedRunwayIndex, airport.runwayNames.data(),
+                         airport.runwayNames.size());
             ImGui::End();
         }
 
@@ -52,7 +59,6 @@ class ExampleLayer : public Walnut::Layer
   private:
     MetarManager metarManager;
     quicktype::Airac airacData;
-    std::unordered_map<std::string, int> runwaysInUse;
 };
 
 Walnut::Application *Walnut::CreateApplication(int argc, char **argv)

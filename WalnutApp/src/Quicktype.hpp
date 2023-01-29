@@ -185,6 +185,8 @@ struct Airport
     std::vector<std::string> sidwpt;
     std::vector<std::string> starwpt;
     std::vector<Runway> runways;
+    std::vector<const char *> runwayNames;
+    int selectedRunwayIndex = -1;
 };
 
 using Airac = std::vector<Airport>;

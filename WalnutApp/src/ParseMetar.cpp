@@ -29,8 +29,7 @@ template <typename T> bool inRange(T low, T high, T x)
     return (low <= x && x <= high);
 }
 
-void parseMetar(const quicktype::Airport &airport, const std::string &metar,
-                std::unordered_map<std::string, int> &runwaysInUse)
+void parseMetar(quicktype::Airport &airport, const std::string &metar)
 {
     std::vector<std::string> metarArray = splitString(metar, ' ');
 
