@@ -186,6 +186,7 @@ struct Airport
     std::vector<std::string> starwpt;
     std::vector<Runway> runways;
     int selectedRunwayIndex = -1;
+    bool runwayOverriden = false;
 };
 
 using Airac = std::vector<Airport>;

@@ -34,19 +34,22 @@ class ExampleLayer : public Walnut::Layer
                 ImGui::End();
                 continue;
             }
-            ImGui::Text("METAR: %s\nRunway in use:", metarManager.readyMetars[airport.icao].second.c_str());
             parseMetar(airport, metarManager.readyMetars[airport.icao].second);
+            ImGui::Text("METAR: %s\nRunway in use: %s", metarManager.readyMetars[airport.icao].second.c_str(),
+                        airport.runways[airport.selectedRunwayIndex].name.c_str());
             for (int i = 0; i < airport.runways.size(); i++)
             {
                 if (ImGui::RadioButton(airport.runways[i].name.c_str(), airport.selectedRunwayIndex == i))
+                {
                     airport.selectedRunwayIndex = i;
+                    airport.runwayOverriden = true;
+                }
             }
+            if (airport.runwayOverriden)
+                if (ImGui::Button("Auto Runway"))
+                    airport.runwayOverriden = false;
             ImGui::End();
         }
-
-        // ImGui::Separator();
-
-        ImGui::ShowDemoWindow();
     }
 
   private:
@@ -64,9 +67,9 @@ Walnut::Application *Walnut::CreateApplication(int argc, char **argv)
     // app->SetMenubarCallback([app]() {
     //     if (ImGui::BeginMenu("File"))
     //     {
-    //         if (ImGui::MenuItem("Exit"))
+    //         if (ImGui::MenuItem("Open Airac"))
     //         {
-    //             app->Close();
+
     //         }
     //         ImGui::EndMenu();
     //     }
