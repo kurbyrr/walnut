@@ -48,6 +48,12 @@ class ExampleLayer : public Walnut::Layer
             if (airport.runwayOverriden)
                 if (ImGui::Button("Auto Runway"))
                     airport.runwayOverriden = false;
+            ImGui::Text("Procedures:");
+            ImGui::Text("SID RNAV: %s\nSID CONV: %s",
+                        airport.runways[airport.selectedRunwayIndex].sidrnav.value_or("N/A").c_str(),
+                        airport.runways[airport.selectedRunwayIndex].sidconv.value_or("N/A").c_str());
+            ImGui::Text("\nSTAR RNAV: %s\nSTAR CONV: %s", airport.runways[airport.selectedRunwayIndex].starrnav.c_str(),
+                        airport.runways[airport.selectedRunwayIndex].starconv.value_or("N/A").c_str());
             ImGui::End();
         }
     }
