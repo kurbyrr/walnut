@@ -177,6 +177,7 @@ struct Runway
     std::optional<std::string> sidconv;
     std::string starrnav;
     std::optional<std::string> starconv;
+    std::string app;
 };
 
 struct Airport
@@ -208,6 +209,7 @@ inline void from_json(const json &j, Runway &x)
     x.sidconv = get_stack_optional<std::string>(j, "SIDCONV");
     x.starrnav = j.at("STARRNAV").get<std::string>();
     x.starconv = get_stack_optional<std::string>(j, "STARCONV");
+    x.app = j.at("APP").get<std::string>();
 }
 
 inline void to_json(json &j, const Runway &x)
@@ -219,6 +221,7 @@ inline void to_json(json &j, const Runway &x)
     j["SIDCONV"] = x.sidconv;
     j["STARRNAV"] = x.starrnav;
     j["STARCONV"] = x.starconv;
+    j["APP"] = x.app;
 }
 
 inline void from_json(const json &j, Airport &x)
