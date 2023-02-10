@@ -22,7 +22,8 @@
                 "SIDRNAV": "5P",
                 "SIDCONV": "5A",
                 "STARRNAV": "1L",
-                "STARCONV": "1K"
+                "STARCONV": "1K",
+                "APP": "ILS"
             },
             {
                 "Name": "05",
@@ -30,7 +31,8 @@
                 "SIDRNAV": "5Q",
                 "SIDCONV": "5B/5Z",
                 "STARRNAV": "1L",
-                "STARCONV": "1K"
+                "STARCONV": "1K",
+                "APP": "RNP"
             },
             {
                 "Name": "29",
@@ -38,7 +40,8 @@
                 "SIDRNAV": "5R",
                 "SIDCONV": "5W",
                 "STARRNAV": "1L",
-                "STARCONV": "1K"
+                "STARCONV": "1K",
+                "APP": "ILS"
             },
             {
                 "Name": "11",
@@ -46,7 +49,8 @@
                 "SIDRNAV": null,
                 "SIDCONV": "5E",
                 "STARRNAV": "1L",
-                "STARCONV": "1K"
+                "STARCONV": "1K",
+                "APP": "RNP"
             }
         ]
     },
@@ -70,7 +74,8 @@
                 "SIDRNAV": "7W",
                 "SIDCONV": null,
                 "STARRNAV": "7T",
-                "STARCONV": null
+                "STARCONV": null,
+                "APP": "ILS"
             },
             {
                 "Name": "09",
@@ -78,7 +83,8 @@
                 "SIDRNAV": "7E",
                 "SIDCONV": null,
                 "STARRNAV": "7P",
-                "STARCONV": null
+                "STARCONV": null,
+                "APP": "RNP"
             }
         ]
     },
@@ -100,7 +106,8 @@
                 "SIDRNAV": null,
                 "SIDCONV": "5W",
                 "STARRNAV": "6M",
-                "STARCONV": "6D/6L"
+                "STARCONV": "6D/6L",
+                "APP": "ILS"
             },
             {
                 "Name": "09",
@@ -108,7 +115,8 @@
                 "SIDRNAV": null,
                 "SIDCONV": "5E",
                 "STARRNAV": "6C",
-                "STARCONV": null
+                "STARCONV": null,
+                "APP": "RNP"
             }
         ]
     }
