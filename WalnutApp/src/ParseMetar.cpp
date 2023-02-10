@@ -31,7 +31,7 @@ void parseMetar(quicktype::Airport &airport, const std::string &metar)
 
     std::vector<std::string> metarArray = splitString(metar, ' ');
 
-    std::regex windRegex("^(\\d\\d\\d|VRB)P?(\\d+)(?:G(\\d+))?(KT|MPS|KPH)");
+    static std::regex windRegex("^(\\d\\d\\d|VRB)P?(\\d+)(?:G(\\d+))?(KT|MPS|KPH)");
     std::smatch match;
     for (auto &metarPart : metarArray)
     {
