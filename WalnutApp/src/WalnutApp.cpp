@@ -28,7 +28,7 @@ class ExampleLayer : public Walnut::Layer
 
         metarManager.addAirports(airacData);
 
-        autoGenBuffer = new char[300];
+        autoGenBuffer = new char[102];
         lfbdIndex = getAirportIndex("LFBD");
         lfbeIndex = getAirportIndex("LFBE");
         lfbhIndex = getAirportIndex("LFBH");
@@ -97,7 +97,7 @@ class ExampleLayer : public Walnut::Layer
         const quicktype::Runway &lfbhRunway = airacData[lfbhIndex].runways[airacData[lfbhIndex].selectedRunwayIndex];
 
         std::snprintf(
-            autoGenBuffer, 300,
+            autoGenBuffer, 102,
             "LFBD DEP-%s ARR-%s EXPECT %s%s // LFBE DEP-%s ARR-%s EXPECT %s%s // LFBH DEP-%s ARR-%s EXPECT %s%s",
             lfbdRunway.sidrnav.value_or(lfbdRunway.sidconv.value()).c_str(), lfbdRunway.starrnav.c_str(),
             lfbdRunway.app.c_str(), lfbdRunway.name.c_str(), //

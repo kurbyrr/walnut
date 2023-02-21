@@ -9,18 +9,22 @@ template <typename R> bool is_ready(std::future<R> const &f)
 
 void MetarManager::procFutures()
 {
-    for (auto it = metarsFutures.begin(); it != metarsFutures.end(); it++)
+    if (metarsFutures.empty())
+        return;
+
+    for (auto it = metarsFutures.begin(); it != metarsFutures.end();)
     {
-        if (!it->second.valid())
-            continue;
         if (is_ready(it->second))
         {
-            readyMetars[it->first].first = true;
-            readyMetars[it->first].second = it->second.get();
+            auto &readyMetar = readyMetars[it->first];
+            readyMetar.first = true;
+            readyMetar.second = it->second.get();
+            metarsFutures.erase(it++);
         }
         else
         {
             readyMetars[it->first].first = false;
+            it++;
         }
     }
 }
