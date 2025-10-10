@@ -1,34 +1,40 @@
 #include "StreamWriter.h"
 
-namespace Walnut
-{
-	void StreamWriter::WriteBuffer(Buffer buffer, bool writeSize)
-	{
-		if (writeSize)
-			WriteData((char*)&buffer.Size, sizeof(uint32_t));
+namespace Walnut {
 
-		WriteData((char*)buffer.Data, buffer.Size);
-	}
+template <>
+void StreamWriter::WriteArray(const std::vector<std::string> &array,
+                              bool writeSize) {
+  if (writeSize)
+    WriteRaw<uint32_t>((uint32_t)array.size());
 
-	void StreamWriter::WriteZero(uint64_t size)
-	{
-		char zero = 0;
-		for (uint64_t i = 0; i < size; i++)
-			WriteData(&zero, 1);
-	}
+  for (const auto &element : array)
+    WriteString(element);
+}
 
-	void StreamWriter::WriteString(const std::string& string)
-	{
-		size_t size = string.size();
-		WriteData((char*)&size, sizeof(size_t));
-		WriteData((char*)string.data(), sizeof(char) * string.size());
-	}
+void StreamWriter::WriteBuffer(Buffer buffer, bool writeSize) {
+  if (writeSize)
+    WriteData((char *)&buffer.Size, sizeof(uint32_t));
 
-	void StreamWriter::WriteString(std::string_view string)
-	{
-		size_t size = string.size();
-		WriteData((char*)&size, sizeof(size_t));
-		WriteData((char*)string.data(), sizeof(char) * string.size());
-	}
+  WriteData((char *)buffer.Data, buffer.Size);
+}
+
+inline void StreamWriter::WriteZero(uint64_t size) {
+  char zero = 0;
+  for (uint64_t i = 0; i < size; i++)
+    WriteData(&zero, 1);
+}
+
+void StreamWriter::WriteString(const std::string &string) {
+  size_t size = string.size();
+  WriteData((char *)&size, sizeof(size_t));
+  WriteData((char *)string.data(), sizeof(char) * string.size());
+}
+
+void StreamWriter::WriteString(std::string_view string) {
+  size_t size = string.size();
+  WriteData((char *)&size, sizeof(size_t));
+  WriteData((char *)string.data(), sizeof(char) * string.size());
+}
 
 } // namespace Walnut
