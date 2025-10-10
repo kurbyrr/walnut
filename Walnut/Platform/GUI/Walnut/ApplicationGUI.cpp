@@ -526,8 +526,8 @@ void Application::Init() {
   uint32_t glfw_num_extension = 0;
   const char **glfw_extensions =
       glfwGetRequiredInstanceExtensions(&glfw_num_extension);
-  std::copy(glfw_extensions, glfw_extensions + glfw_num_extension,
-            extensions.begin());
+  extensions.insert(extensions.begin(), glfw_extensions,
+                    glfw_extensions + glfw_num_extension);
   SetupVulkan(extensions);
 
   // Create Window Surface
