@@ -53,6 +53,8 @@ private:
 Walnut::Application *Walnut::CreateApplication(int argc, char **argv) {
   Walnut::ApplicationSpecification spec;
   spec.Name = "Walnut Example";
+  spec.Width = 1280;
+  spec.Height = 720;
 
   Walnut::Application *app = new Walnut::Application(spec);
   std::shared_ptr<ExampleLayer> exampleLayer = std::make_shared<ExampleLayer>();

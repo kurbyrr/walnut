@@ -1,18 +1,17 @@
 #include "ApplicationGUI.h"
 
 #include "Walnut/Core/Log.h"
-#include "Walnut/UI/UI.h"
 
 //
 // Adapted from Dear ImGui Vulkan example
 //
 
+#include "imgui.h"
 #include "imgui_internal.h"
 
 #include "backends/imgui_impl_glfw.h"
 #include "backends/imgui_impl_vulkan.h"
 
-#include <algorithm>
 #include <stdio.h>  // printf, fprintf
 #include <stdlib.h> // abort
 #include <vulkan/vulkan_core.h>
@@ -331,11 +330,12 @@ static void FrameRender(Walnut::Application *application,
   err = vkAcquireNextImageKHR(g_Device, wd->Swapchain, UINT64_MAX,
                               image_acquired_semaphore, VK_NULL_HANDLE,
                               &wd->FrameIndex);
-  if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR) {
+  if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR)
     g_SwapChainRebuild = true;
+  if (err == VK_ERROR_OUT_OF_DATE_KHR)
     return;
-  }
-  check_vk_result(err);
+  if (err != VK_SUBOPTIMAL_KHR)
+    check_vk_result(err);
 
   s_CurrentFrameIndex = (s_CurrentFrameIndex + 1) % g_MainWindowData.ImageCount;
 
@@ -479,6 +479,10 @@ void Application::Init() {
   glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 
   GLFWmonitor *primaryMonitor = glfwGetPrimaryMonitor();
+  bool is_wayland = glfwGetPlatform() == GLFW_PLATFORM_WAYLAND;
+  float main_scale = // HACK: Values for the laptop
+      is_wayland ? 0.8f
+                 : ImGui_ImplGlfw_GetContentScaleForMonitor(primaryMonitor);
   const GLFWvidmode *videoMode = glfwGetVideoMode(primaryMonitor);
 
   int monitorX, monitorY;
@@ -487,7 +491,8 @@ void Application::Init() {
   glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
   m_WindowHandle =
-      glfwCreateWindow(m_Specification.Width, m_Specification.Height,
+      glfwCreateWindow(static_cast<int>(m_Specification.Width * main_scale),
+                       static_cast<int>(m_Specification.Height * main_scale),
                        m_Specification.Name.c_str(), NULL, NULL);
 
   if (m_Specification.CenterWindow) {
@@ -554,9 +559,10 @@ void Application::Init() {
       ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
   // io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad
   // Controls
-  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;   // Enable Docking
-  io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // Enable Multi-Viewport /
-                                                      // Platform Windows
+  io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable Docking
+                                                    // Waylaaaaaaand
+  // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable; // Enable
+  // Multi-Viewport / Platform Windows
   // io.ConfigViewportsNoAutoMerge = true;
   // io.ConfigViewportsNoTaskBarIcon = true;
 
@@ -572,6 +578,19 @@ void Application::Init() {
   style.PopupRounding = 6.0f;
   style.FrameRounding = 6.0f;
   style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
+  // Bake a fixed style scale. (until we have a solution for dynamic style
+  // scaling, changing this requires resetting Style + calling this again)
+  style.ScaleAllSizes(main_scale);
+  // Set initial font scale. (using io.ConfigDpiScaleFonts=true makes this
+  // unnecessary. We leave both here for documentation purpose)
+  style.FontScaleDpi = main_scale;
+  // [Experimental] Automatically overwrite style.FontScaleDpi in Begin() when
+  // Monitor DPI changes. This will scale fonts but _NOT_ scale sizes/padding
+  // for now.
+  io.ConfigDpiScaleFonts = !is_wayland;
+  // [Experimental] Scale Dear ImGui and Platform Windows when Monitor DPI
+  // changes.
+  io.ConfigDpiScaleViewports = !is_wayland;
 
   // When viewports are enabled we tweak WindowRounding/WindowBg so platform
   // windows can look identical to regular ones.
@@ -731,24 +750,27 @@ void Application::Run() {
       layer->OnUpdate(m_TimeStep);
 
     // Resize swap chain?
-    if (g_SwapChainRebuild) {
-      int width, height;
-      glfwGetFramebufferSize(m_WindowHandle, &width, &height);
-      if (width > 0 && height > 0) {
-        ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
-        ImGui_ImplVulkanH_CreateOrResizeWindow(
-            g_Instance, g_PhysicalDevice, g_Device, &g_MainWindowData,
-            g_QueueFamily, g_Allocator, width, height, g_MinImageCount,
-            g_SwapChainImageUsage);
-        g_MainWindowData.FrameIndex = 0;
+    int fb_width, fb_height;
+    glfwGetFramebufferSize(m_WindowHandle, &fb_width, &fb_height);
+    if (fb_width > 0 && fb_height > 0 &&
+        (g_SwapChainRebuild || g_MainWindowData.Width != fb_width ||
+         g_MainWindowData.Height != fb_height)) {
+      ImGui_ImplVulkan_SetMinImageCount(g_MinImageCount);
+      ImGui_ImplVulkanH_CreateOrResizeWindow(
+          g_Instance, g_PhysicalDevice, g_Device, wd, g_QueueFamily,
+          g_Allocator, fb_width, fb_height, g_MinImageCount, 0);
+      g_MainWindowData.FrameIndex = 0;
 
-        // Clear allocated command buffers from here since entire pool is
-        // destroyed
-        s_AllocatedCommandBuffers.clear();
-        s_AllocatedCommandBuffers.resize(g_MainWindowData.ImageCount);
+      // Clear allocated command buffers from here since entire pool is
+      // destroyed
+      s_AllocatedCommandBuffers.clear();
+      s_AllocatedCommandBuffers.resize(g_MainWindowData.ImageCount);
 
-        g_SwapChainRebuild = false;
-      }
+      g_SwapChainRebuild = false;
+    }
+    if (glfwGetWindowAttrib(m_WindowHandle, GLFW_ICONIFIED) != 0) {
+      ImGui_ImplGlfw_Sleep(10);
+      continue;
     }
 
     // Start the Dear ImGui frame
@@ -756,64 +778,11 @@ void Application::Run() {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    if (m_Specification.UseDockspace) {
-      // We are using the ImGuiWindowFlags_NoDocking flag to make the parent
-      // window not dockable into, because it would be confusing to have two
-      // docking targets within each others.
-      ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDocking;
+    if (m_Specification.WindowDockSpace)
+      ImGui::DockSpaceOverViewport();
 
-      ImGuiViewport *viewport = ImGui::GetMainViewport();
-      ImGui::SetNextWindowPos(viewport->Pos);
-      ImGui::SetNextWindowSize(viewport->Size);
-      ImGui::SetNextWindowViewport(viewport->ID);
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-      window_flags |= ImGuiWindowFlags_NoTitleBar |
-                      ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
-                      ImGuiWindowFlags_NoMove;
-      window_flags |=
-          ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
-      const bool isMaximized = IsMaximized();
-
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding,
-                          isMaximized ? ImVec2(6.0f, 6.0f)
-                                      : ImVec2(1.0f, 1.0f));
-      ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 3.0f);
-
-      ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4{0.0f, 0.0f, 0.0f, 0.0f});
-      ImGui::Begin("DockSpaceWindow", nullptr, window_flags);
-      ImGui::PopStyleColor(); // MenuBarBg
-      ImGui::PopStyleVar(2);
-
-      ImGui::PopStyleVar(2);
-
-      {
-        ImGui::PushStyleColor(ImGuiCol_Border, IM_COL32(50, 50, 50, 255));
-        // Draw window border if the window is not maximized
-        if (!isMaximized)
-          UI::RenderWindowOuterBorders(ImGui::GetCurrentWindow());
-
-        ImGui::PopStyleColor(); // ImGuiCol_Border
-      }
-
-      // Dockspace
-      ImGuiIO &io = ImGui::GetIO();
-      ImGuiStyle &style = ImGui::GetStyle();
-      float minWinSizeX = style.WindowMinSize.x;
-      style.WindowMinSize.x = 370.0f;
-      ImGui::DockSpace(ImGui::GetID("MyDockspace"));
-      style.WindowMinSize.x = minWinSizeX;
-
-      for (auto &layer : m_LayerStack)
-        layer->OnUIRender();
-
-      ImGui::End();
-    } else {
-      // No dockspace - just render windows
-      for (auto &layer : m_LayerStack)
-        layer->OnUIRender();
-    }
+    for (auto &layer : m_LayerStack)
+      layer->OnUIRender();
 
     // Rendering
     ImGui::Render();
@@ -848,11 +817,6 @@ void Application::Run() {
 
 void Application::SetMenubarCallback(
     const std::function<void()> &menubarCallback) {
-  if (!m_Specification.UseDockspace)
-    WL_CORE_WARN_TAG("Application", "Application::SetMenubarCallback - "
-                                    "ApplicationSpecification::UseDockspace is "
-                                    "false to menubar will not be visible.");
-
   m_MenubarCallback = menubarCallback;
 }
 

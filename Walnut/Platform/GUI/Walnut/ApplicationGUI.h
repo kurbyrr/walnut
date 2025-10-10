@@ -30,10 +30,7 @@ struct ApplicationSpecification {
   std::filesystem::path IconPath;
 
   bool WindowResizeable = true;
-
-  // Uses a dockspace which takes up the
-  // entire window
-  bool UseDockspace = true;
+  bool WindowDockSpace = true;
 
   // Window will be created in the center
   // of primary monitor
