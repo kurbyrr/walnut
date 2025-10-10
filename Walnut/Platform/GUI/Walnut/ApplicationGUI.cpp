@@ -59,6 +59,7 @@ static VkQueue g_Queue = VK_NULL_HANDLE;
 static VkDebugReportCallbackEXT g_DebugReport = VK_NULL_HANDLE;
 static VkPipelineCache g_PipelineCache = VK_NULL_HANDLE;
 static VkDescriptorPool g_DescriptorPool = VK_NULL_HANDLE;
+static VkSampleCountFlagBits g_MsaaSamples = VK_SAMPLE_COUNT_1_BIT;
 
 static ImGui_ImplVulkanH_Window g_MainWindowData;
 static uint32_t g_MinImageCount = 2;
@@ -188,6 +189,21 @@ static void SetupVulkan(std::vector<const char *> &instance_extensions) {
   // Select Physical Device (GPU)
   g_PhysicalDevice = ImGui_ImplVulkanH_SelectPhysicalDevice(g_Instance);
   IM_ASSERT(g_PhysicalDevice != VK_NULL_HANDLE);
+
+  // MSAA
+  {
+    VkPhysicalDeviceProperties physicalDeviceProperties;
+    vkGetPhysicalDeviceProperties(g_PhysicalDevice, &physicalDeviceProperties);
+    VkSampleCountFlags counts =
+        physicalDeviceProperties.limits.framebufferColorSampleCounts &
+        physicalDeviceProperties.limits.framebufferDepthSampleCounts;
+    if (counts & VK_SAMPLE_COUNT_4_BIT) {
+      g_MsaaSamples = VK_SAMPLE_COUNT_4_BIT;
+    } else {
+      std::cout << "[UNOPTIMISED] MSAA not supported" << std::endl;
+      g_MsaaSamples = VK_SAMPLE_COUNT_1_BIT;
+    }
+  }
 
   // Select graphics queue family
   g_QueueFamily = ImGui_ImplVulkanH_SelectQueueFamilyIndex(g_PhysicalDevice);
@@ -614,7 +630,7 @@ void Application::Init() {
       .PipelineCache = g_PipelineCache,
       .PipelineInfoMain = {.RenderPass = wd->RenderPass,
                            .Subpass = 0,
-                           .MSAASamples = VK_SAMPLE_COUNT_1_BIT},
+                           .MSAASamples = g_MsaaSamples},
       .Allocator = g_Allocator,
       .CheckVkResultFn = check_vk_result,
   };
