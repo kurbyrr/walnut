@@ -778,6 +778,13 @@ void Application::Run() {
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
+    if (m_MenubarCallback) {
+      if (ImGui::BeginMainMenuBar()) {
+        m_MenubarCallback();
+        ImGui::EndMainMenuBar();
+      }
+    }
+
     if (m_Specification.WindowDockSpace)
       ImGui::DockSpaceOverViewport();
 
