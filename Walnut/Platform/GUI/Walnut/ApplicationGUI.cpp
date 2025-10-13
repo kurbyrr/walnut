@@ -46,9 +46,6 @@ extern bool g_ApplicationRunning;
 #endif
 
 // #define IMGUI_UNLIMITED_FRAME_RATE
-#ifdef _DEBUG
-#define IMGUI_VULKAN_DEBUG_REPORT
-#endif
 
 static VkAllocationCallbacks *g_Allocator = NULL;
 static VkInstance g_Instance = VK_NULL_HANDLE;
@@ -56,9 +53,11 @@ static VkPhysicalDevice g_PhysicalDevice = VK_NULL_HANDLE;
 static VkDevice g_Device = VK_NULL_HANDLE;
 static uint32_t g_QueueFamily = (uint32_t)-1;
 static VkQueue g_Queue = VK_NULL_HANDLE;
-static VkDebugReportCallbackEXT g_DebugReport = VK_NULL_HANDLE;
 static VkPipelineCache g_PipelineCache = VK_NULL_HANDLE;
 static VkDescriptorPool g_DescriptorPool = VK_NULL_HANDLE;
+#ifdef IMGUI_VULKAN_DEBUG_REPORT
+static VkDebugUtilsMessengerEXT g_DebugMessenger = VK_NULL_HANDLE;
+#endif
 
 static ImGui_ImplVulkanH_Window g_MainWindowData;
 static uint32_t g_MinImageCount = 2;
@@ -88,22 +87,17 @@ void check_vk_result(VkResult err) {
     abort();
 }
 
-#ifdef APP_USE_VULKAN_DEBUG_REPORT
+#ifdef IMGUI_VULKAN_DEBUG_REPORT
 static VKAPI_ATTR VkBool32 VKAPI_CALL
-debug_report(VkDebugReportFlagsEXT flags, VkDebugReportObjectTypeEXT objectType,
-             uint64_t object, size_t location, int32_t messageCode,
-             const char *pLayerPrefix, const char *pMessage, void *pUserData) {
-  (void)flags;
-  (void)object;
-  (void)location;
-  (void)messageCode;
-  (void)pUserData;
-  (void)pLayerPrefix; // Unused arguments
-  fprintf(stderr, "[vulkan] Debug report from ObjectType: %i\nMessage: %s\n\n",
-          objectType, pMessage);
+debug_report(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+             VkDebugUtilsMessageTypeFlagsEXT messageTypes,
+             VkDebugUtilsMessengerCallbackDataEXT const *pCallbackData,
+             void * /*pUserData*/) {
+  // TODO: Proper debug callback
+  std::cout << pCallbackData->pMessage << std::endl;
   return VK_FALSE;
 }
-#endif // APP_USE_VULKAN_DEBUG_REPORT
+#endif
 
 static bool
 IsExtensionAvailable(const ImVector<VkExtensionProperties> &properties,
@@ -122,8 +116,13 @@ static void SetupVulkan(std::vector<const char *> &instance_extensions) {
 
   // Create Vulkan Instance
   {
+    VkApplicationInfo app_info = {};
+    app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+    app_info.apiVersion = VK_API_VERSION_1_3;
+
     VkInstanceCreateInfo create_info = {};
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    create_info.pApplicationInfo = &app_info;
 
     // Enumerate available extensions
     uint32_t properties_count;
@@ -149,11 +148,11 @@ static void SetupVulkan(std::vector<const char *> &instance_extensions) {
 #endif
 
     // Enabling validation layers
-#ifdef APP_USE_VULKAN_DEBUG_REPORT
+#ifdef IMGUI_VULKAN_DEBUG_REPORT
     const char *layers[] = {"VK_LAYER_KHRONOS_validation"};
     create_info.enabledLayerCount = 1;
     create_info.ppEnabledLayerNames = layers;
-    instance_extensions.push_back("VK_EXT_debug_report");
+    instance_extensions.push_back("VK_EXT_debug_utils");
 #endif
 
     // Create Vulkan Instance
@@ -166,21 +165,25 @@ static void SetupVulkan(std::vector<const char *> &instance_extensions) {
 #endif
 
     // Setup the debug report callback
-#ifdef APP_USE_VULKAN_DEBUG_REPORT
-    auto f_vkCreateDebugReportCallbackEXT =
-        (PFN_vkCreateDebugReportCallbackEXT)vkGetInstanceProcAddr(
-            g_Instance, "vkCreateDebugReportCallbackEXT");
-    IM_ASSERT(f_vkCreateDebugReportCallbackEXT != nullptr);
-    VkDebugReportCallbackCreateInfoEXT debug_report_ci = {};
-    debug_report_ci.sType =
-        VK_STRUCTURE_TYPE_DEBUG_REPORT_CALLBACK_CREATE_INFO_EXT;
-    debug_report_ci.flags = VK_DEBUG_REPORT_ERROR_BIT_EXT |
-                            VK_DEBUG_REPORT_WARNING_BIT_EXT |
-                            VK_DEBUG_REPORT_PERFORMANCE_WARNING_BIT_EXT;
-    debug_report_ci.pfnCallback = debug_report;
-    debug_report_ci.pUserData = nullptr;
-    err = f_vkCreateDebugReportCallbackEXT(g_Instance, &debug_report_ci,
-                                           g_Allocator, &g_DebugReport);
+#ifdef IMGUI_VULKAN_DEBUG_REPORT
+    auto f_vkCreateDebugUtilsMessengerEXT =
+        (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+            g_Instance, "vkCreateDebugUtilsMessengerEXT");
+    IM_ASSERT(f_vkCreateDebugUtilsMessengerEXT != nullptr);
+    VkDebugUtilsMessengerCreateInfoEXT debug_messenger_ci = {};
+    debug_messenger_ci.sType =
+        VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+    debug_messenger_ci.flags = 0;
+    debug_messenger_ci.messageType =
+        VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT;
+    debug_messenger_ci.messageSeverity =
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT |
+        VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT;
+    debug_messenger_ci.pfnUserCallback = &debug_report;
+    err = f_vkCreateDebugUtilsMessengerEXT(g_Instance, &debug_messenger_ci,
+                                           nullptr, &g_DebugMessenger);
     check_vk_result(err);
 #endif
   }
@@ -304,10 +307,10 @@ static void CleanupVulkan() {
 
 #ifdef IMGUI_VULKAN_DEBUG_REPORT
   // Remove the debug report callback
-  auto vkDestroyDebugReportCallbackEXT =
-      (PFN_vkDestroyDebugReportCallbackEXT)vkGetInstanceProcAddr(
-          g_Instance, "vkDestroyDebugReportCallbackEXT");
-  vkDestroyDebugReportCallbackEXT(g_Instance, g_DebugReport, g_Allocator);
+  auto f_vkDestroyDebugUtilsMessengerEXT =
+      (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+          g_Instance, "vkDestroyDebugUtilsMessengerEXT");
+  f_vkDestroyDebugUtilsMessengerEXT(g_Instance, g_DebugMessenger, g_Allocator);
 #endif // IMGUI_VULKAN_DEBUG_REPORT
 
   vkDestroyDevice(g_Device, g_Allocator);
@@ -602,7 +605,7 @@ void Application::Init() {
   // Setup Platform/Renderer backends
   ImGui_ImplGlfw_InitForVulkan(m_WindowHandle, true);
   ImGui_ImplVulkan_InitInfo init_info = {
-      .ApiVersion = VK_VERSION_1_3,
+      .ApiVersion = VK_API_VERSION_1_3,
       .Instance = g_Instance,
       .PhysicalDevice = g_PhysicalDevice,
       .Device = g_Device,
